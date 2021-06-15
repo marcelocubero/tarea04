@@ -1,5 +1,5 @@
 // Mapa Leaflet
-var mapa = L.map('mapid').setView([9.5, -84.10], 8);
+var mapa = L.map('mapid').setView([9.92, -84.20], 13);
 
 
 // Definición de capas base
@@ -27,10 +27,24 @@ var capas_base = {
   "CartoDB Dark Matter": capa_cartoDB_darkMatter
 };	    
 
+$.getJSON("https://marcelocubero.github.io/capas/dis-sa.geojson", function(geodata) {
+  var capa_dis = L.geoJson(geodata, {
+    style: function(feature) {
+	  return {'color': "#ADFF2F", 'weight': 1, 'fillOpacity': 0.0, 'fillColor':'#ADFF2F'}
+    },
+    onEachFeature: function(feature, layer) {
+      var popupText = "<strong>Nombre Distrito:</strong> " + feature.properties.distrito + "<br>" + "<strong>Cantón:</strong> " + feature.properties.canton
+	  + "<br>" + "<strong>Provincia:</strong> " + feature.properties.provincia;
+      layer.bindPopup(popupText);
+    }			
+  }).addTo(mapa);
+  control_capas.addOverlay(capa_dis, 'Distritos de Santa Ana');
+});
+
 
 // Ícono personalizado para carnivoros
-const iconoCarnivoro = L.divIcon({
-  html: '<i class="fas fa-paw fa-1x"></i>',
+const icono_agua = L.divIcon({
+  html: '<i class="fas fa-tint fa-1x"></i>',
   className: 'estiloIconos'
 });
 
@@ -40,43 +54,38 @@ control_capas = L.control.layers(capas_base).addTo(mapa);
 
 
 // Control de escala
-L.control.scale().addTo(mapa);
+L.control.scale({position: 'topright', imperial: false}).addTo(mapa);
    
 
-// Capa vectorial de registros agrupados de carnívoros
-$.getJSON("https://tpb729-desarrollosigweb-2021.github.io/datos/gbif/carnivora-cr-wgs84.geojson", function(geodata) {
-  // Capa de registros individuales
-  var capa_carnivora = L.geoJson(geodata, {
+
+$.getJSON("https://marcelocubero.github.io/capas/puntos_h.geojson", function(geodata) {
+
+  var capa_h = L.geoJson(geodata, {
     style: function(feature) {
 	  return {'color': "#013220", 'weight': 3}
     },
     onEachFeature: function(feature, layer) {
-      var popupText = "<strong>Especie</strong>: " + feature.properties.species + "<br>" + 
-                      "<strong>Localidad</strong>: " + feature.properties.locality + "<br>" + 
-                      "<strong>Fecha</strong>: " + feature.properties.eventDate + "<br>" + 
-                      "<strong>Institución</strong>: " + feature.properties.institutionCode + "<br>" + 
-                      "<br>" +
-                      "<a href='" + feature.properties.occurrenceID + "'>Más información</a>";
+      var popupText = "<strong>Nombre:</strong> " + feature.properties.nombre  ;
       layer.bindPopup(popupText);
     },
     pointToLayer: function(getJsonPoint, latlng) {
-        return L.marker(latlng, {icon: iconoCarnivoro});
+        return L.marker(latlng, {icon: icono_agua});
     }
   });
 
   // Capa de calor (heatmap)
   coordenadas = geodata.features.map(feat => feat.geometry.coordinates.reverse());
-  var capa_carnivora_calor = L.heatLayer(coordenadas, {radius: 30, blur: 1});
+  var capa_h_calor = L.heatLayer(coordenadas, {radius: 30, blur: 1});
 
   // Capa de puntos agrupados
-  var capa_carnivora_agrupados = L.markerClusterGroup({spiderfyOnMaxZoom: true});
-  capa_carnivora_agrupados.addLayer(capa_carnivora);
+  var capa_h_agrupados = L.markerClusterGroup({spiderfyOnMaxZoom: true});
+  capa_h_agrupados.addLayer(capa_h);
 
   // Se añaden las capas al mapa y al control de capas
-  capa_carnivora_calor.addTo(mapa);
-  control_capas.addOverlay(capa_carnivora_calor, 'Mapa de calor');
-  // capa_carnivora_agrupados.addTo(mapa);
-  control_capas.addOverlay(capa_carnivora_agrupados, 'Registros agrupados');
-  // capa_carnivora.addTo(mapa);
-  control_capas.addOverlay(capa_carnivora, 'Registros individuales de carnívoros');
+  capa_h_calor.addTo(mapa);
+  control_capas.addOverlay(capa_h_calor, 'Mapa de calor de Puntos de Hidratación');
+
+  control_capas.addOverlay(capa_h_agrupados, 'Puntos de Hidratación agrupados');
+
+  control_capas.addOverlay(capa_h, 'Puntos de Hidratación');
 });
